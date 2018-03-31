@@ -232,6 +232,7 @@ if ($password -eq "#####") {
 		Write-log "You need to configure this scrip before using it. Please edit this script file and add edit the config region"
 		exit
 }
+Get-ScriptUpdate #Check for an update
 
 #Import the Skype for Business / Lync Modules and error if not found
 	Write-Log -component "Script Block" -Message "Checking for Lync/Skype management tools"
