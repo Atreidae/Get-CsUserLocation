@@ -12,7 +12,7 @@
 	
 .NOTES  
     Version      	   	: 0.1 (Devel)
-	Date			    : 27/03/2018
+	Date			    : 31/03/2018
 	Lync Version		: Tested against Skype4B 2015
     Author    			: James Arber
 	Header stolen from  : Greig Sheridan who stole it from Pat Richard's amazing "Get-CsConnections.ps1"
@@ -57,7 +57,7 @@ Custom.PsObject. Get-CsUserLocation returns a the results of a migration as a cu
 
 [CmdletBinding(DefaultParametersetName="Common")]
 param(
-	[Parameter(Mandatory=$false, Position=2)] [switch]$SipAddress,
+	[Parameter(Mandatory=$true, Position=1)] [string]$SipAddress,
 	[Parameter(Mandatory=$false, Position=2)] [switch]$DisableScriptUpdate,
 	[Parameter(Mandatory=$false, Position=3)] [string]$LogFileLocation
 	)
@@ -68,9 +68,9 @@ param(
 
  #This should NOT be your admin account, if you have a service account etc, use that instead. Otherwise create an AD account and enable it for S4B
 
- $username = "jarber@icomm.com.au" #A SIP Address of a user authorised to use UCMA
+ $username = "example\user" #username (in UPN or NetBios format) of a user authorised to use UCMA
  $password = "#####"  #Their password (We wont log it, promise)
- $s4bAutodiscover = "https://lyncdiscover.icomm.com.au" #This should by "Lyncdiscover.(yoursipdomain)"
+ $s4bAutodiscover = "https://lyncdiscover.skype4badmin.com" #This should by "Lyncdiscover.(yoursipdomain)"
 
  ### END UPDATE THESE SETTINGS ###
 
@@ -95,7 +95,7 @@ param(
 	Write-Host "Info: Get-CsUserLocation.ps1 Version $ScriptVersion started at $StartTime" -ForegroundColor Green
 	If (!$LogFileLocation) {$LogFileLocation = $PSCommandPath -replace ".ps1",".log"} #Where do we store the log files? (In the same folder by default)
 	$DefaultLogComponent = "Unknown" 
-	Write-Host "Info:Loading Functions" -ForegroundColor Green
+	Write-Host "Info: Loading Functions" -ForegroundColor Green
 #endregion bootstrap
 
 
@@ -219,7 +219,7 @@ Function Get-ScriptUpdate {
 
 function Connect-CsUCWAAPI{
 
-
+#Not implemented
 
 }
 
@@ -247,18 +247,6 @@ if ($password -eq "#####") {
 		Throw "Unable to load Skype4B/Lync management tools"
 		}
 
-<#	
-	#Check for the AD Management Tools
-	$ADManagementTools = $false
-	if(!(Get-Module "ActiveDirectory")) {Import-Module ActiveDirectory -Verbose:$false}
-	if(Get-Module "ActiveDirectory") {$ADManagementTools = $true}
-	if(!$ADManagementTools) {
-		Write-Log 
-		Write-Log -component "Script Block" -Message "Could not locate ActiveDirectory Management tools. Script Exiting" -severity 5 
-		Throw "Unable to load ActiveDirectory Powershell Module"
-		}
-#>
- 
 
  write-log "Attempting to download S4B Autodiscover Information" -severity 1
 try{
@@ -302,8 +290,8 @@ try{
 	$postparams = @{UserAgent=$userAgent;EndpointId=$EndpointID;Culture="en-US"} | ConvertTo-JSON
     $data = Invoke-WebRequest -Uri "$rootappurl" -Method POST -Body "$postparams" -Headers @{"Authorization"="Bearer $authcwt"} -ContentType "application/json" -UseBasicParsing
 
-    $appurl = $(($data.content | ConvertFrom-JSON)._links.self.href)
-	$appurl = "$($rootappurl.split("/")[0..2] -join "/")$(($data.content | ConvertFrom-JSON)._links.self.href)"
+    $script:appurl = $(($data.content | ConvertFrom-JSON)._links.self.href)
+	$script:appurl = "$($rootappurl.split("/")[0..2] -join "/")$(($data.content | ConvertFrom-JSON)._links.self.href)"
 
     $meurl = $(($data.Content | ConvertFrom-JSON)._embedded.me._links)   
     $peopleurl = $(($data.Content | ConvertFrom-JSON)._embedded.people._links)   
@@ -317,26 +305,16 @@ catch{
 	 write-log "Unable to create application instance" -severity 4
 	exit 1
 }
-<# 
-Change your Presence, Get your Contacts & their Status
 
-Now you can do what you want or need to with the API. Here are a few examples of changing your status, getting your contacts, getting the status of your contacts.
-#>
-<#
-# Get my Contacts
-$response = Invoke-WebRequest -Uri ($baseurl+$peopleurl.myContacts.href) -Method Get -Headers @{"Authorization"="Bearer $authcwt"} -ContentType "application/json" -UseBasicParsing
-$myContacts = $response.Content | ConvertFrom-Json
-$myContacts._embedded.contact | Out-GridView
+Write-Log "Downloading user presence from ($appurl + /people/ + $sipAddress + /Location)"
+$location = (Invoke-WebRequest -Uri ($script:appurl + "/people/" + $SipAddress + "/Location") -method GET -Headers @{"Authorization"="Bearer $authcwt"} -ContentType "application/json" -UseBasicParsing | ConvertFrom-Json)
 
-
-# Get the presense status of my contacts
-$myContactsLinks = $(($response.content | ConvertFrom-JSON)._embedded.contact._links)
-
-foreach ($contact in $myContactsLinks.contactPresence.href){  
-    $presense = Invoke-WebRequest -Uri $($baseurl+ $Contact) -method GET -Headers @{"Authorization"="Bearer $authcwt"} -ContentType "application/json" -UseBasicParsing #| ConvertFrom-JSON | Select -ExpandProperty availability
-    $contactPresense = $presense.Content | ConvertFrom-Json
-    write-host $Contact.split("/")[7..7] "is on a" $contactPresense.deviceType "and is" $contactPresense.availability
+if ($location.location -eq $null) {
+	Write-Log "Users location is not in the LIS database and user has not input a location. Cannot locate" -severity 3
 }
-#>
+else {
+	Write-Log "Users location is: $($location.location)"
+	Write-Log "Outputting object"
+	}
 
-Invoke-WebRequest -Uri ($appurl + "/people/" + $SipAddress + "/Location") -method GET -Headers @{"Authorization"="Bearer $authcwt"} -ContentType "application/json" -UseBasicParsing | ConvertFrom-Json
+	Write-Output $location.location
