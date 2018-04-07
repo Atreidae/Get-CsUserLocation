@@ -11,12 +11,15 @@
     
 	
 .NOTES  
-    Version      	   	: 0.1 (Devel)
-	Date			    : 31/03/2018
+    Version      	   	: 0.11 (Devel)
+	Date			    : 7/04/2018
 	Lync Version		: Tested against Skype4B 2015
     Author    			: James Arber
 	Header stolen from  : Greig Sheridan who stole it from Pat Richard's amazing "Get-CsConnections.ps1"
 							
+	:v0.11:	Debugging Build
+			- Added additional OAuth Debugging
+
 	:v0.1:	Internal Build
 	
 .LINK  
@@ -46,7 +49,7 @@ Custom.PsObject. Get-CsUserLocation returns a the results of a migration as a cu
   								Greig Sheriden https://greiginsydney.com/about/ @greiginsydney
 
 						: Auto Update Code
-								Pat Richard http://www.ehloworld.com @patrichard
+								Pat Richard https://ucunleashed.com @patrichard
 
 						: Proxy Detection
 								Michel de Rooij	http://eightwone.com
@@ -262,8 +265,12 @@ try{
 write-log "AuthN to S4B to get oAuth Token" -severity 1
 try{
 	$postParams = @{grant_type="password";username=$username;password=$password}
+	write-log "Rquesting URL $baseurl/WebTicket/oauthtoken" -severity 1
  	$data = Invoke-WebRequest -Uri "$baseurl/WebTicket/oauthtoken" -Method POST -Body $postParams -UseBasicParsing
+	write-log "Oauth Returned" -severity 1
+	write-log "$data.content" -severity 1
  	$authcwt = ($data.content | ConvertFrom-JSON).access_token
+	write-log "Oauth Token $authcwt" -severity 1
 }catch{
 	write-log "We couldn't AuthN with the username & password provided. Update and try again." -severity 4
 	exit 1

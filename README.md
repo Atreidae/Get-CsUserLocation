@@ -11,9 +11,9 @@ Built using Visual Studio and Poshtools Pro
 	
 ## NOTES 
 
-Version			: 0.1
+Version			: 0.11
 
-Date			: 31/03/2018
+Date			: 7/04/2018
 
 Lync Version	: Tested against Skype4B 2015
 
@@ -23,7 +23,10 @@ Header stolen from  	: Greig Sheridan who stole it from Pat Richard's amazing "G
 
 ## Update History
 
-**:v0.10: Internal Build**
+**v0.11 Debugging Build**
+Added additional OAuth Debugging
+
+**v0.10 Internal Build**
 	
 ## LINK  
 TODO
