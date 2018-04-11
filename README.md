@@ -11,9 +11,9 @@ Built using Visual Studio and Poshtools Pro
 	
 ## NOTES 
 
-Version			: 0.11
+Version			: 0.3
 
-Date			: 7/04/2018
+Date			: 11/04/2018
 
 Lync Version	: Tested against Skype4B 2015
 
@@ -22,6 +22,11 @@ Author    		: James Arber
 Header stolen from  	: Greig Sheridan who stole it from Pat Richard's amazing "Get-CsConnections.ps1"
 
 ## Update History
+**v0.3	Verbose Build**
+Additional logging. Verbose logging support
+
+**v0.2	Security Build**
+Added External config file support (not yet implemented)
 
 **v0.11 Debugging Build**
 Added additional OAuth Debugging
